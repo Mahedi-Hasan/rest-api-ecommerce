@@ -24,7 +24,7 @@ class ProductController extends Controller
 
     public function index()
     {
-        return ProductCollection::collection(Product::paginate(5));
+        return ProductCollection::collection(Product::paginate());
     }
 
     /**
@@ -55,9 +55,7 @@ class ProductController extends Controller
         $product->save();
 
         return response([
-
             'data' => new ProductResource($product)
-
         ],Response::HTTP_CREATED);
     }
 
