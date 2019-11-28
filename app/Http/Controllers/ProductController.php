@@ -1,13 +1,14 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Http\Requests\ProductRequest;
+use App\Http\Requests\Product as ProductRequest;
 use App\Http\Resources\ProductCollection;
 use App\Http\Resources\ProductResource;
 use App\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
+use Validator;
 
 class ProductController extends Controller
 {
@@ -51,6 +52,7 @@ class ProductController extends Controller
         $product->price = $request->price;
         $product->stock = $request->stock;
         $product->discount = $request->discount;
+        $product->user_id = $request->user_id;
 
         $product->save();
 
@@ -90,19 +92,26 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        $this->userAuthorize($product);
+//        print_r($request);die('first');
+        $isAuthorized = $this->userAuthorize($product);
 
-        $request['detail'] = $request->description;
+        if($isAuthorized){
+            $request['detail'] = $request->description;
+            unset($request['description']);
+            $product->update($request->all());
 
-        unset($request['description']);
-
-        $product->update($request->all());
-
-        return response([
-
-            'data' => new ProductResource($product)
-
-        ],Response::HTTP_CREATED);
+            return response([
+                'data' => new ProductResource($product)
+            ],Response::HTTP_CREATED);
+        }else{
+            return response([
+                'data'=>[
+                    'err'=>true,
+                    'code'=>203,
+                    'message' => 'Sorry you are not allowed to update this information'
+                ]
+            ],203);
+        }
     }
 
     /**
@@ -120,10 +129,14 @@ class ProductController extends Controller
 
     public function userAuthorize($product)
     {
+//        print_r($product);die('second');
         if(Auth::user()->id != $product->user_id){
             //throw your exception text here;
-            return "You are not allowed to do this action!!!";
+            return 0;
+        }else{
+            return true;
         }
+
     }
 
 }
